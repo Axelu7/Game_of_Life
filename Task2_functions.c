@@ -1,4 +1,4 @@
-#include "header1.h"
+#include "header2.h"
 
 char** alloc_mat(int n, int m)
 {
@@ -45,13 +45,52 @@ char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare)
     return mat;
 }
 
-void free_mem(char** mat, int n)
+void free_mem_mat(char** mat, int n)
 {
     for(int i = 0; i < n; i++)
         free(mat[i]);
     
     free(mat);
 
+}
+
+void free_mem_stack(Node* head)
+{
+    Node* temp;
+    while(head != NULL)
+    {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
+
+void write(Node** head, int n, const char* fisier_iesire)
+{
+    FILE *f = fopen(fisier_iesire, "wt");
+    if(f == NULL)
+    {
+        printf("Eroare la deschiderea fisierului de iesire!\n");
+        exit(1);
+    }
+
+    Node* temp = *head;
+
+    while(temp != NULL)
+    {
+        fprintf(f, " %d %d ", temp->l, temp->c);
+        temp = temp->next;
+    }
+
+    fclose(f);
+}
+void push(Node** head, int i, int j)
+{
+    Node* new_node = malloc(sizeof(Node));
+    new_node->l = i;
+    new_node->c = j;
+    new_node->next = *head;
+    *head = new_node;
 }
 
 int vecini(char** mat, int n, int m, int lin, int col)
@@ -75,34 +114,8 @@ int vecini(char** mat, int n, int m, int lin, int col)
     return nr;
 }
 
-void write(int n, char** mat, const char* fisier_iesire)
+void GoL(Node** head, int k, int n, int m, char** mat, const char* fisier_iesire)
 {
-    FILE* f = fopen(fisier_iesire, "at");
-    if(f == NULL)
-    {
-        printf("Eroare la deschiderea fisierului de iesire!\n");
-        exit(1);
-    }
-
-    for(int i = 0; i < n; i++)
-        fprintf(f, "%s\n", mat[i]);
-
-    fprintf(f, "\n");
-
-    fclose(f);
-}
-
-void GoL(int k, int n, int m, char** mat, const char* fisier_iesire)
-{
-    FILE* f = fopen(fisier_iesire, "wt");
-    if (f == NULL)
-    {
-        printf("Eroare la deschiderea fisierului de iesire!\n");
-        exit(1);
-    }
-
-    write(n, mat, fisier_iesire);
-
     char** nou_mat = alloc_mat(n, m);
     for(int gen = 0; gen < k; gen++)
     {
@@ -115,26 +128,35 @@ void GoL(int k, int n, int m, char** mat, const char* fisier_iesire)
                 if(mat[i][j] == alive)
                 {
                     if(nr_vecini < 2 || nr_vecini > 3)
+                    {
                         nou_mat[i][j] = dead;
+                        push(head, i, j);
+                    }
                     else
                         nou_mat[i][j] = alive;
+                
                 }
                 else
                 {
                     if(nr_vecini == 3)
+                    {
                         nou_mat[i][j] = alive;
+                        push(head, i, j);
+                    }
                     else
                         nou_mat[i][j] = dead;
+                        
                 }
             }
             nou_mat[i][m] = '\0';
         }
-
-        write(n, nou_mat, fisier_iesire);
+        printf("%d:", gen + 1);
+        write(*head, n, fisier_iesire);
 
         for(int i = 0; i < n; i++)
             strcpy(mat[i], nou_mat[i]);
-    }
 
+        free_mem_stack(*head);
+    }
     free_mem(nou_mat, n);
 }
