@@ -45,27 +45,68 @@ char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare)
     return mat;
 }
 
-void free_mem_mat(char** mat, int n)
+void insert_sort(ListNode** head, int i, int j)
 {
-    for(int i = 0; i < n; i++)
-        free(mat[i]);
-    
-    free(mat);
-
-}
-
-void free_mem_stack(Node* head)
-{
-    Node* temp;
-    while(head != NULL)
+    ListNode* new_node = malloc(sizeof(ListNode));
+    if(new_node == NULL)
     {
-        temp = head;
-        head = head->next;
-        free(temp);
+        printf("Eroare la alocarea dinamica a listei!\n");
+        exit(1);
+    }
+
+    new_node->l = i;
+    new_node->c = j;
+    new_node->next = NULL;
+    
+    if(*head == NULL || (*head)->l > i || ((*head)->l == i && (*head)->c > j))
+    {
+        new_node->next = *head;
+        *head = new_node;
+    }
+
+    else
+    {
+        ListNode* current = *head;
+        while(current->next != NULL && (current->next->l < i || (current->next->l == i && current->next->c < j)))
+            current = current->next;
+
+        new_node->next = current->next;
+        current->next = new_node;
     }
 }
 
-void write(Node** head, int n, const char* fisier_iesire)
+void push(StackNode** stack, ListNode* list)
+{
+    StackNode* new_node = malloc(sizeof(StackNode));
+    if(new_node == NULL)
+    {
+        printf("Eroare la alocarea dinamica a stivei!\n");
+        exit(1);
+    }
+
+    new_node->list = list;
+    new_node->next = *stack;
+    *stack = new_node;
+}
+
+void reverse_stack(StackNode** stack)
+{
+    StackNode* prev = NULL;
+    StackNode* current = *stack;
+    StackNode* next = NULL;
+
+    while (current != NULL)
+    {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+
+    *stack = prev;
+}
+
+void write(StackNode** stack, const char* fisier_iesire)
 {
     FILE *f = fopen(fisier_iesire, "wt");
     if(f == NULL)
@@ -74,23 +115,55 @@ void write(Node** head, int n, const char* fisier_iesire)
         exit(1);
     }
 
-    Node* temp = *head;
-
-    while(temp != NULL)
+    reverse_stack(stack);
+    StackNode* current = *stack;
+    int gen = 1;
+    while(current != NULL)
     {
-        fprintf(f, " %d %d ", temp->l, temp->c);
-        temp = temp->next;
-    }
+        fprintf(f, "%d", gen++);
 
+        ListNode* list = current->list;
+        while(list != NULL)
+        {
+            fprintf(f, " %d %d", list->l, list->c);
+            list = list->next;
+        }
+
+        fprintf(f, "\n");
+        current = current->next;
+        }
     fclose(f);
 }
-void push(Node** head, int i, int j)
+
+void free_mem_mat(char** mat, int n)
 {
-    Node* new_node = malloc(sizeof(Node));
-    new_node->l = i;
-    new_node->c = j;
-    new_node->next = *head;
-    *head = new_node;
+    for(int i = 0; i < n; i++)
+        free(mat[i]);
+    
+    free(mat);
+}
+
+void free_mem_list(ListNode* list)
+{
+    ListNode* aux;
+    while(list != NULL)
+    {
+        aux = list;
+        list = list->next;
+        free(aux);
+    }
+}
+
+void free_mem_stack(StackNode** stack)
+{
+    StackNode* aux;
+    while(*stack != NULL)
+    {
+        aux = *stack;
+        *stack = (*stack)->next;
+        free_mem_list(aux->list);
+        free(aux);
+    }
 }
 
 int vecini(char** mat, int n, int m, int lin, int col)
@@ -110,15 +183,15 @@ int vecini(char** mat, int n, int m, int lin, int col)
                 nr++;
         }
     }
-
     return nr;
 }
 
-void GoL(Node** head, int k, int n, int m, char** mat, const char* fisier_iesire)
+void GoL(StackNode** stack, int k, int n, int m, char** mat, const char* fisier_iesire)
 {
     char** nou_mat = alloc_mat(n, m);
     for(int gen = 0; gen < k; gen++)
     {
+        ListNode* list = NULL;
         for(int i = 0; i < n; i++)
         {
             for(int j = 0; j < m; j++)
@@ -127,36 +200,40 @@ void GoL(Node** head, int k, int n, int m, char** mat, const char* fisier_iesire
 
                 if(mat[i][j] == alive)
                 {
+                    
                     if(nr_vecini < 2 || nr_vecini > 3)
                     {
                         nou_mat[i][j] = dead;
-                        push(head, i, j);
+                        insert_sort(&list, i, j);
                     }
                     else
                         nou_mat[i][j] = alive;
-                
                 }
+
                 else
                 {
                     if(nr_vecini == 3)
                     {
+                        insert_sort(&list, i, j);
                         nou_mat[i][j] = alive;
-                        push(head, i, j);
                     }
                     else
                         nou_mat[i][j] = dead;
-                        
                 }
             }
+
             nou_mat[i][m] = '\0';
         }
-        printf("%d:", gen + 1);
-        write(*head, n, fisier_iesire);
+        
+        push(stack, list);
 
         for(int i = 0; i < n; i++)
             strcpy(mat[i], nou_mat[i]);
-
-        free_mem_stack(*head);
+        free_mem_mat(nou_mat, n);
     }
-    free_mem(nou_mat, n);
+
+    write(stack, fisier_iesire);
+
+    free_mem_stack(stack);
+    free_mem_mat(mat, n);
 }
