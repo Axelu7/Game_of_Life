@@ -1,8 +1,32 @@
 #include "header2.h"
 
+char** alloc_mat(int n, int m)
+{
+    char** mat = malloc(n * sizeof(char*));
+
+    if(mat == NULL)
+    {
+        printf("Eroare la alocarea dinamica a matricei!\n");
+        exit(1);
+    }
+
+    for(int i = 0; i < n; i++)
+    {
+        mat[i] = malloc((m+1) * sizeof(char));
+        
+        if(mat[i] == NULL)
+        {
+            printf("Eroare la alocarea dinamica a matricei la linia %d!\n", i);
+            exit(1);
+        }
+    }
+
+    return mat;
+}
+
 char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare)
 {
-    FILE *f = fopen(fisier_intrare, "rt");
+    FILE *f = fopen("bonusIn.txt", "rt");
     if(f == NULL)
     {
         printf("Eroare la deschiderea fisierului de intrare!\n");
@@ -53,6 +77,67 @@ void free_mem_stack(StackNode** stack)
     }
 }
 
+void insert_sort(ListNode** head, int i, int j)
+{
+    ListNode* new_node = malloc(sizeof(ListNode));
+    if(new_node == NULL)
+    {
+        printf("Eroare la alocarea dinamica a listei!\n");
+        exit(1);
+    }
+
+    new_node->l = i;
+    new_node->c = j;
+    new_node->next = NULL;
+    
+    if(*head == NULL || (*head)->l > i || ((*head)->l == i && (*head)->c > j))
+    {
+        new_node->next = *head;
+        *head = new_node;
+    }
+
+    else
+    {
+        ListNode* current = *head;
+        while(current->next != NULL && (current->next->l < i || (current->next->l == i && current->next->c < j)))
+            current = current->next;
+
+        new_node->next = current->next;
+        current->next = new_node;
+    }
+}
+
+void reverse_stack(StackNode** stack)
+{
+    StackNode* prev = NULL;
+    StackNode* current = *stack;
+    StackNode* next = NULL;
+
+    while (current != NULL)
+    {
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+
+    *stack = prev;
+}
+
+void push(StackNode** stack, ListNode* list)
+{
+    StackNode* new_node = malloc(sizeof(StackNode));
+    if(new_node == NULL)
+    {
+        printf("Eroare la alocarea dinamica a stivei!\n");
+        exit(1);
+    }
+
+    new_node->list = list;
+    new_node->next = *stack;
+    *stack = new_node;
+}
+
 void bonus(StackNode** stack, char** mat, int n, int m, const char* fisier_iesire)
 {
     reverse_stack(stack);
@@ -69,7 +154,7 @@ void bonus(StackNode** stack, char** mat, int n, int m, const char* fisier_iesir
         current = current->next;
     }
 
-    FILE *f = fopen(fisier_iesire, "wt");
+    FILE *f = fopen("out.txt", "wt");
     if (!f)
     {
         printf("Eroare la deschiderea fisierului de iesire!\n");
