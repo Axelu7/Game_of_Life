@@ -24,9 +24,9 @@ char** alloc_mat(int n, int m)
     return mat;
 }
 
-char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare)
+char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare, StackNode** stack)
 {
-    FILE *f = fopen("bonusIn.txt", "rt");
+    FILE *f = fopen(fisier_intrare, "rt");
     if(f == NULL)
     {
         printf("Eroare la deschiderea fisierului de intrare!\n");
@@ -42,6 +42,22 @@ char** read(int *t, int *n, int *m, int *k, const char* fisier_intrare)
     for(int i = 0; i < *n; i++)
         fscanf(f,"%s", mat[i]);
 
+        for (int gen = 0; gen < *k; gen++)
+        {
+            int nr_modificari;
+            fscanf(f, "%d", &nr_modificari);
+    
+            ListNode* lista = NULL;
+            for (int i = 0; i < nr_modificari; i++)
+            {
+                int l, c;
+                fscanf(f, "%d %d", &l, &c);
+                insert_sort(&lista, l, c);
+            }
+    
+            push(stack, lista);
+        }
+    
     fclose(f);
     return mat;
 }
@@ -154,7 +170,7 @@ void bonus(StackNode** stack, char** mat, int n, int m, const char* fisier_iesir
         current = current->next;
     }
 
-    FILE *f = fopen("out.txt", "wt");
+    FILE *f = fopen(fisier_iesire, "wt");
     if (!f)
     {
         printf("Eroare la deschiderea fisierului de iesire!\n");
